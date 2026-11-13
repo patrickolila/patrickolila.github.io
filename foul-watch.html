@@ -1,0 +1,1171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f2f3f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0e11" media="(prefers-color-scheme: dark)">
+<title>Foul Watch</title>
+<style>
+:root{color-scheme:light dark;
+  --bg:#f2f3f5;--surface:#fff;--surface2:#e9ebef;--text:#12151a;--muted:#59616d;--faint:#8b929d;--line:#dfe2e7;
+  --pip:#d4d8de;--ink:#3a404a;
+  --near:#3b5bdb;--near-bg:#eef2ff;
+  --bonus:#a85f00;--bonus-pip:#f08c00;--bonus-bg:#fff5e4;
+  --double:#c22727;--double-pip:#f03e3e;--double-bg:#ffefee;
+  --live:#2b8a3e;--bad:#c92a2a;--accent:#12151a;--on-accent:#fff;--radius:14px}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0c0e11;--surface:#15181d;--surface2:#1d2127;--text:#eceef1;--muted:#a3aab5;--faint:#6c737d;--line:#262b32;
+  --pip:#30363e;--ink:#c9ced6;
+  --near:#91a7ff;--near-bg:#151c33;
+  --bonus:#ffb94f;--bonus-pip:#ffa94d;--bonus-bg:#291f10;
+  --double:#ff8a80;--double-pip:#ff6b6b;--double-bg:#2c1515;
+  --live:#51cf66;--bad:#ff8787;--accent:#eceef1;--on-accent:#0c0e11}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+button,input,select{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:720px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 16px 56px}
+.titlebar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1{font-size:23px;line-height:1.1;letter-spacing:-.015em;margin:0;font-weight:750}
+h2{display:flex;align-items:baseline;gap:8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:24px 2px 9px}
+h2 .count{color:var(--faint);font-weight:600;letter-spacing:.02em}
+.btn{font-size:14px;font-weight:650;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:7px 14px;cursor:pointer}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.status{display:flex;align-items:center;gap:8px;margin:7px 2px 0;color:var(--muted);font-size:13.5px}
+.dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--live);box-shadow:0 0 0 3px color-mix(in srgb,var(--live) 22%,transparent)}
+.dot.bad{background:var(--bad);box-shadow:0 0 0 3px color-mix(in srgb,var(--bad) 22%,transparent)}
+.dot.idle{background:var(--faint);box-shadow:none}
+.banner{margin:10px 0 0;padding:10px 12px;border-radius:10px;font-size:13.5px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.banner.bad{border-color:color-mix(in srgb,var(--bad) 45%,var(--line));color:var(--bad)}
+.banner.replay{display:flex;align-items:center;gap:10px;justify-content:space-between;color:var(--text)}
+.banner button{flex:none}
+.toast{position:sticky;top:8px;z-index:5;margin:10px 0 0;padding:11px 12px 11px 14px;border-radius:12px;background:var(--accent);color:var(--on-accent);box-shadow:0 6px 24px rgba(0,0,0,.18);display:flex;gap:10px;align-items:flex-start}
+.toast b{display:block}
+.toast span{font-size:13px;opacity:.85}
+.toast button{margin-left:auto;flex:none;background:transparent;border:1px solid color-mix(in srgb,var(--on-accent) 35%,transparent);color:var(--on-accent);border-radius:999px;padding:4px 10px;font-size:13px;cursor:pointer}
+.panel{margin:12px 0 0;padding:14px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--line)}
+.panel h3{margin:4px 0 8px;font-size:15px}
+.panel h3 + .fine{margin-top:-4px}
+.panel hr{border:0;border-top:1px solid var(--line);margin:14px 0 10px}
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:9px 0;flex-wrap:wrap}
+.setrow > span:first-child{font-weight:650}
+.seg{display:inline-flex;background:var(--surface2);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;border-radius:999px;padding:5px 11px;font-size:13px;font-weight:650;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.inline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px}
+select,input[type=text]{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:14px}
+input[type=text]{width:9.5em}
+.fine{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+.chips{display:flex;gap:7px;margin:16px 0 0;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.chips button{font-size:13.5px;font-weight:650;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 13px;cursor:pointer;white-space:nowrap}
+.chips button[aria-pressed=true]{color:var(--on-accent);background:var(--accent);border-color:var(--accent)}
+.card{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:11px 14px 10px 17px;margin:0 0 10px;overflow:hidden}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--line)}
+.card.near::before{background:var(--near)}
+.card.bonus{background:var(--bonus-bg);border-color:color-mix(in srgb,var(--bonus-pip) 35%,var(--line))}
+.card.bonus::before{background:var(--bonus-pip)}
+.card.double{background:var(--double-bg);border-color:color-mix(in srgb,var(--double-pip) 35%,var(--line))}
+.card.double::before{background:var(--double-pip)}
+.card.flash{animation:flash 1.2s ease-out 3}
+@keyframes flash{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--bonus-pip) 70%,transparent)}100%{box-shadow:0 0 0 14px transparent}}
+@media (prefers-reduced-motion:reduce){.card.flash{animation:none}}
+.chead{display:flex;align-items:center;gap:9px;margin-bottom:5px}
+.lg{flex:none;font-size:10.5px;font-weight:750;letter-spacing:.07em;color:var(--muted);border:1px solid color-mix(in srgb,var(--text) 18%,transparent);border-radius:5px;padding:1px 5px}
+.when{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.star{margin-left:auto;flex:none;font-size:21px;line-height:1;color:var(--faint);background:none;border:0;padding:4px 0 4px 12px;cursor:pointer}
+.star[aria-pressed=true]{color:var(--bonus-pip)}
+.teams{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;align-items:center;column-gap:10px;row-gap:8px;margin:3px 0 2px}
+.team{display:contents}
+.abbr{font-weight:750;letter-spacing:.01em;white-space:nowrap}
+.score{font-variant-numeric:tabular-nums;color:var(--muted);text-align:right}
+.bar{display:flex;align-items:center;gap:8px;min-width:0}
+.pips{display:flex;gap:3px;flex:0 1 auto;min-width:0}
+.pip{display:block;flex:0 1 auto;width:13px;min-width:4px;height:13px;border-radius:3.5px;background:var(--pip)}
+.pip.mark{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--text) 38%,transparent)}
+.pip.on{background:var(--ink);box-shadow:none}
+.t1 .pip.on{background:var(--near)}
+.t2 .pip.on{background:var(--bonus-pip)}
+.t3 .pip.on{background:var(--double-pip)}
+.n{flex:none;min-width:1.35em;font-weight:800;font-variant-numeric:tabular-nums}
+.badge{font-size:10.5px;font-weight:800;letter-spacing:.06em;white-space:nowrap;color:var(--faint);text-align:right}
+.t1 .badge{color:var(--near)}
+.t2 .badge{color:var(--bonus)}
+.t3 .badge{color:var(--double)}
+.xtra{margin-top:8px;padding-top:8px;border-top:1px dashed color-mix(in srgb,var(--text) 16%,transparent)}
+.xcap{font-size:10.5px;font-weight:750;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:2px 0 6px}
+.stats3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:11px}
+.stats3 div{background:color-mix(in srgb,var(--text) 5%,transparent);border-radius:9px;padding:6px 9px 7px}
+.stats3 b{display:block;font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.2}
+.stats3 span{display:block;font-size:11.5px;line-height:1.25;color:var(--muted)}
+.card.near .stats3 .hi b{color:var(--near)}
+.card.bonus .stats3 .hi b,.card.bonus .up{color:var(--bonus)}
+.card.double .stats3 .hi b,.card.double .up{color:var(--double)}
+.ptab{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto;column-gap:12px;row-gap:3px;font-size:13.5px;align-items:baseline}
+.ptab .h{font-size:10px;font-weight:750;letter-spacing:.06em;color:var(--muted);text-align:right;white-space:nowrap}
+.ptab .pt{font-weight:750}
+.ptab .pn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ptab .pv{text-align:right;font-variant-numeric:tabular-nums}
+.ptab .gap{grid-column:1/-1;height:3px}
+.xtra .note{font-size:12.5px;color:var(--muted);margin-top:7px}
+.xtra .up{font-weight:800}
+.cfoot{margin-top:6px;padding-top:7px;border-top:1px dashed color-mix(in srgb,var(--text) 16%,transparent);font-size:13.5px;color:var(--muted)}
+.xtra + .cfoot{border-top:0;margin-top:2px;padding-top:4px}
+.cfoot b{color:var(--text)}
+.card.near .cfoot b{color:var(--near)}
+.card.bonus .cfoot b{color:var(--bonus)}
+.card.double .cfoot b{color:var(--double)}
+.rows{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:1px solid var(--line);font-size:14.5px}
+.row:first-child{border-top:0}
+.row .m{display:flex;gap:10px;min-width:0;flex-wrap:wrap}
+.row .m span{white-space:nowrap}
+.row .m b{font-variant-numeric:tabular-nums;font-weight:800}
+.row .t1 b{color:var(--near)}
+.row .t2 b{color:var(--bonus)}
+.row .t3 b{color:var(--double)}
+.row .when{margin-left:auto;color:var(--muted);font-weight:600;font-size:13px;text-align:right}
+.row .star{margin-left:0;font-size:19px;padding:2px 0 2px 4px}
+.row .sub{display:block;font-size:12px;font-weight:500;color:var(--faint)}
+.empty{margin:28px 4px;color:var(--muted);font-size:15px}
+.log{list-style:none;margin:0;padding:0}
+.log li{display:grid;grid-template-columns:auto 1fr auto;gap:12px;padding:9px 2px;border-top:1px solid var(--line);font-size:13.5px}
+.log li:first-child{border-top:0}
+.log time{color:var(--faint);font-variant-numeric:tabular-nums;white-space:nowrap;min-width:4.2em}
+.log b{display:block;font-weight:650}
+.log span{color:var(--muted);white-space:pre-line}
+.tag{align-self:start;font-size:11px;font-weight:750;letter-spacing:.04em;padding:2px 7px;border-radius:999px;background:var(--surface2);color:var(--muted);white-space:nowrap}
+.tag.alerted{background:color-mix(in srgb,var(--live) 16%,transparent);color:var(--live)}
+details.rules{margin-top:26px;color:var(--muted);font-size:14px}
+details.rules summary{cursor:pointer;font-weight:650;color:var(--text)}
+details.rules p{margin:10px 0 0}
+#selftest{white-space:pre-wrap;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:12px}
+@media (max-width:400px){
+  .wrap{padding-left:12px;padding-right:12px}
+  .teams{column-gap:8px}
+  .pips{gap:2px}
+  .pip{height:12px;border-radius:2.5px}
+  .badge{font-size:10px;letter-spacing:.03em}
+  .row{gap:8px;padding:9px 10px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="titlebar">
+      <h1>Foul Watch</h1>
+      <button class="btn" id="gear" aria-expanded="false" aria-controls="settings">Settings</button>
+    </div>
+    <p class="status"><span class="dot idle" id="dot"></span><span id="statustext">Starting…</span></p>
+    <div id="banners"></div>
+    <div id="toasts"></div>
+    <section class="panel" id="settings" hidden>
+      <h3>Alerts on this page</h3>
+      <p class="fine">An alert fires when both teams in a game reach the bonus in the same quarter (NBA) or half (NCAAB). The page has to stay open for alerts to fire.</p>
+      <div id="segs"></div>
+      <div class="setrow"><span>Sound</span><button class="btn" id="t-sound"></button></div>
+      <div class="setrow" id="row-notify"><span>Browser notifications</span><button class="btn" id="t-notify"></button></div>
+      <div class="setrow" id="row-wake"><span>Keep screen on</span><button class="btn" id="t-wake"></button></div>
+      <div class="setrow"><span>Only with at least</span>
+        <span class="inline">NBA <select id="s-min-nba"><option value="120">2:00</option><option value="180">3:00</option><option value="240">4:00</option><option value="300">5:00</option></select>
+        NCAAB <select id="s-min-ncaab"><option value="180">3:00</option><option value="240">4:00</option><option value="360">6:00</option><option value="480">8:00</option></select> left</span></div>
+      <div class="setrow"><span>Heads-up one foul earlier</span><button class="btn" id="t-heads"></button></div>
+      <div class="setrow"><span>NCAAB double-bonus alert</span><button class="btn" id="t-double"></button></div>
+      <div class="setrow"><button class="btn" id="testalert">Test the alert</button><span class="fine" id="alerthint"></span></div>
+      <hr>
+      <h3>Games</h3>
+      <div class="setrow"><span>Watch</span><span class="inline"><button class="btn" id="w-nba"></button><button class="btn" id="w-ncaab"></button></span></div>
+      <div class="setrow"><span>NCAAB games</span><div class="seg" id="scope"><button data-scope="all">All Division I</button><button data-scope="featured">ESPN featured</button></div></div>
+      <hr>
+      <h3>Try it on a finished game</h3>
+      <p class="fine">Plays a finished game back as if it were live, alerts included. The id is the number at the end of an ESPN game link.</p>
+      <div class="setrow"><span class="inline"><input type="text" id="r-id" inputmode="numeric" value="401909294" aria-label="ESPN game id">
+        <select id="r-from" aria-label="Start at"><option value="1">From the start</option><option value="2">From period 2</option><option value="3">From period 3</option><option value="4">From period 4</option></select>
+        <select id="r-speed" aria-label="Speed"><option value="10">10x</option><option value="20">20x</option><option value="40">40x</option></select></span>
+        <button class="btn primary" id="r-go">Replay</button></div>
+    </section>
+    <nav class="chips" aria-label="Filter">
+      <button data-f="all">All</button><button data-f="nba">NBA</button><button data-f="ncaab">NCAAB</button><button data-f="star">★ Starred</button>
+    </nav>
+  </header>
+  <div id="selftest" hidden></div>
+  <main id="main"></main>
+  <h2>Alerts</h2>
+  <ol class="log" id="log"></ol>
+  <details class="rules">
+    <summary>How it works</summary>
+    <p><b>Data.</b> The page reads ESPN's public scoreboard and play-by-play straight from your browser. Games near the bonus refresh every 20 seconds, and the rest every 45. ESPN can trail the TV broadcast, so check the scorebug before you bet. Browsers slow down timers in background tabs, so keep this tab in front for the fastest updates.</p>
+    <p><b>NBA.</b> Team fouls reset every quarter. From the 5th team foul in a quarter (4th in overtime), every common foul is 2 free throws, so a team at 4 is at the limit. In the last 2:00, a team under the limit gets one foul to give. Offensive fouls, technicals and double fouls don't count.</p>
+    <p><b>NCAAB.</b> Team fouls reset at halftime; overtime continues the 2nd half. The 7th team foul starts the 1-and-1 and the 10th starts 2 shots, so a team at 6 is one away. Offensive fouls count toward the total but never shoot. Technicals aren't counted.</p>
+    <p><b>Quarter and half totals.</b> "Pace" is the points so far in the quarter (NBA) or half (NCAAB, overtime included) plus the time left at this game's scoring rate. "With the bonus" adds what both teams being in the bonus added in 449 NBA and 443 college games. That's about 0.41 points a minute in the NBA, 0.44 a minute at the college 1-and-1, and roughly 0.5 at the double bonus (few cases). The rest of a quarter swings about 5 points either way, so treat these as a rough guide, not a fair line.</p>
+    <p><b>Player points.</b> "On the floor" lists each team's players on the court with the most free-throw attempts so far. With both teams in the bonus, the top one scored about 0.13 points a minute more than usual for the rest of the quarter.</p>
+  </details>
+</div>
+<script>
+(function(){
+'use strict';
+
+// ------------------------------------------------------------------ config
+var QS = new URLSearchParams(location.search);
+var API = (QS.get('api') || 'https://site.api.espn.com/apis/site/v2/sports/basketball').replace(/\/+$/, '');
+var LEAGUES = {nba: {path: 'nba', label: 'NBA'}, ncaab: {path: 'mens-college-basketball', label: 'NCAAB'}};
+var ORDER = ['nba', 'ncaab'];
+// Measured on 449 NBA and 443 NCAAB finished games: points per minute (both teams) that the rest
+// of a quarter (NBA) or half (NCAAB) scored above a plain live-pace estimate, by foul state
+// (0 neither team in the bonus, 1 one team, 2 both, 3 both in the NCAAB double bonus).
+var PACE_ADJ = {nba: {0: 0.06, 1: 0.14, 2: 0.47}, ncaab: {0: 0.125, 1: 0.37, 2: 0.56, 3: 0.65}};
+var LEAGUE_RATE = {nba: 4.79, ncaab: 3.80};
+var PLAYER_BUMP = 0.13;
+var PROJ_MIN_LEFT = {nba: 180, ncaab: 240};
+var FAST = 20000, IDLE = 45000, SCOREBOARD = 20000, RPS = 3, MAX_ACTIVE = 4;
+var NBA = 'nba', HALVES = 'ncaa_halves', QUARTERS = 'ncaa_quarters';
+
+// ------------------------------------------------------------------ saved settings
+var KEY = 'foulwatch.v1';
+var store = {settings: {}, starred: [], alerted: {}, log: []};
+try { var saved = JSON.parse(localStorage.getItem(KEY) || '{}'); if (saved && typeof saved === 'object') Object.keys(store).forEach(function(k){ if (saved[k]) store[k] = saved[k]; }); } catch (e) {}
+var DEFAULTS = {push: {nba: 'all', ncaab: 'all'}, sound: false, notify: false, wake: false, minLeft: {nba: 180, ncaab: 240},
+                headsUp: false, doubleBonus: true, watch: {nba: true, ncaab: true}, scope: 'all', filter: 'all'};
+var S = store.settings;
+Object.keys(DEFAULTS).forEach(function(k){
+  if (S[k] === undefined) S[k] = JSON.parse(JSON.stringify(DEFAULTS[k]));
+  else if (typeof DEFAULTS[k] === 'object') Object.keys(DEFAULTS[k]).forEach(function(j){ if (S[k][j] === undefined) S[k][j] = DEFAULTS[k][j]; });
+});
+(function prune(){
+  var cutoff = Date.now() / 1000 - 2 * 86400;
+  Object.keys(store.alerted).forEach(function(k){ if (store.alerted[k] < cutoff) delete store.alerted[k]; });
+  store.log = store.log.filter(function(e){ return e.at > cutoff; }).slice(-80);
+})();
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+
+// ------------------------------------------------------------------ rules
+function toInt(v, d){ var n = parseFloat(v); return isFinite(n) ? Math.trunc(n) : (d === undefined ? 0 : d); }
+function clockSeconds(v){
+  if (v === null || v === undefined) return null;
+  if (typeof v === 'number') return isFinite(v) ? v : null;
+  var s = String(v).trim();
+  if (!s) return null;
+  if (s.indexOf(':') >= 0) {
+    var p = s.split(':'), m = parseInt(p[0] || '0', 10), r = parseFloat(p[1] || '0');
+    return (isFinite(m) && isFinite(r)) ? m * 60 + r : null;
+  }
+  var f = parseFloat(s);
+  return isFinite(f) ? f : null;
+}
+function fmtClock(s){
+  if (s === null || s === undefined) return '';
+  if (s >= 60) { var i = Math.floor(s); return Math.floor(i / 60) + ':' + String(i % 60).padStart(2, '0'); }
+  return Math.max(s, 0).toFixed(1);
+}
+function rulesFor(league, reg){ return league === 'nba' ? NBA : (reg === 4 ? QUARTERS : HALVES); }
+function foulKind(rules, typeText){
+  var t = String(typeText || '').toLowerCase();
+  if (t.indexOf('free throw') >= 0 || t.indexOf('freethrow') >= 0 || t.indexOf('turnover') >= 0) return null;
+  if (t.indexOf('technical') >= 0 || t.indexOf('techfoul') >= 0) return 'technical';
+  if (t.indexOf('foul') < 0 && t.indexOf('charge') < 0) return null;
+  if (rules === NBA) {
+    if (t.indexOf('offensive') >= 0 || t.indexOf('charge') >= 0) return 'offensive';
+    if (t.indexOf('double') >= 0) return 'double';
+  }
+  return 'team';
+}
+function foulBucket(rules, period){
+  if (rules === NBA) return period;
+  if (rules === HALVES) return period <= 1 ? 1 : 2;
+  return Math.min(period, 4);
+}
+function bonusAt(rules, period){
+  if (rules === NBA) return period <= 4 ? 4 : 3;
+  return rules === HALVES ? 6 : 4;
+}
+// [tone, tier, badge]. tier (alerts) and tone (colour): 0 nothing, 1 one foul away,
+// 2 next foul = free throws, 3 next foul = 2 shots (NCAA double bonus).
+function teamStatus(rules, period, fouls, last2, clock){
+  if (rules === NBA) {
+    var limit = bonusAt(rules, period), late = clock !== null && clock !== undefined && clock <= 120;
+    if (fouls > limit) return [2, 2, 'PENALTY'];
+    if (fouls === limit) return [2, 2, 'AT LIMIT'];
+    if (late && last2 >= 1) return [2, 2, 'AT LIMIT'];
+    if (late) return [1, fouls === limit - 1 ? 1 : 0, 'FOUL TO GIVE'];
+    if (fouls === limit - 1) return [1, 1, '1 FROM LIMIT'];
+    return [0, 0, ''];
+  }
+  if (rules === HALVES) {
+    if (fouls >= 10) return [3, 3, 'DOUBLE BONUS'];
+    if (fouls === 9) return [3, 3, 'DOUBLE NEXT'];
+    if (fouls >= 7) return [2, 2, 'BONUS'];
+    if (fouls === 6) return [2, 2, 'BONUS NEXT'];
+    if (fouls === 5) return [1, 1, '1 FROM BONUS'];
+    return [0, 0, ''];
+  }
+  if (fouls >= 5) return [2, 2, 'BONUS'];
+  if (fouls === 4) return [2, 2, 'BONUS NEXT'];
+  if (fouls === 3) return [1, 1, '1 FROM BONUS'];
+  return [0, 0, ''];
+}
+function pipSpec(rules, period){
+  if (rules === NBA) { var l = bonusAt(rules, period); return [l + 1, [l + 1]]; }
+  return rules === HALVES ? [10, [7, 10]] : [5, [5]];
+}
+function headline(rules, tier){
+  if (tier >= 3) return '2 shots both ways';
+  if (tier === 2) return rules === NBA ? '2 FTs both ways' : (rules === HALVES ? '1-and-1 both ways' : '2 shots both ways');
+  if (tier === 1) return 'Both 1 foul from the ' + (rules === NBA ? 'limit' : 'bonus');
+  return '';
+}
+function periodLabel(rules, period, reg){
+  if (period <= 0) return '';
+  reg = reg || (rules === HALVES ? 2 : 4);
+  if (period <= reg) return reg === 2 ? ['1st half', '2nd half'][period - 1] : 'Q' + period;
+  var n = period - reg;
+  return n === 1 ? 'OT' : n + 'OT';
+}
+function per(p){ return toInt((p.period || {}).number); }
+function typeText(p){ return (p.type || {}).text || ''; }
+function partIds(p){ return (p.participants || []).map(function(x){ return String((x.athlete || {}).id || ''); }); }
+function countFouls(rules, plays, ids, period){
+  var bucket = foulBucket(rules, period), out = Object.create(null);
+  ids.forEach(function(t){ out[t] = {fouls: 0, last2: 0, techs: 0, last: ''}; });
+  plays.forEach(function(p){
+    var pr = per(p);
+    if (pr <= 0 || foulBucket(rules, pr) !== bucket) return;
+    var tid = String((p.team || {}).id || ''), rec = out[tid];
+    if (!rec) return;
+    var kind = foulKind(rules, typeText(p));
+    if (kind === 'technical') rec.techs++;
+    if (kind !== 'team') return;
+    rec.fouls++;
+    var disp = (p.clock || {}).displayValue;
+    if (rules === NBA && pr === period) { var c = clockSeconds(disp); if (c !== null && c <= 120) rec.last2++; }
+    rec.last = String(p.text || '').trim() + ' (' + disp + ')';
+  });
+  return out;
+}
+function periodStartScore(rules, plays, period){
+  var bucket = foulBucket(rules, period), base = [0, 0];
+  plays.forEach(function(p){
+    var pr = per(p);
+    if (pr > 0 && foulBucket(rules, pr) < bucket && p.awayScore !== undefined && p.homeScore !== undefined)
+      base = [toInt(p.awayScore), toInt(p.homeScore)];
+  });
+  return base;
+}
+// NBA: each team's players on the floor (starters plus substitutions), ranked by free-throw
+// attempts so far, with points this quarter and personal fouls.
+function foulDrawers(data, ids, period){
+  var names = Object.create(null), teamOf = Object.create(null), starters = {}, on = {};
+  ids.forEach(function(t){ starters[t] = new Set(); });
+  (((data || {}).boxscore || {}).players || []).forEach(function(tb){
+    var tid = String((tb.team || {}).id || '');
+    if (!starters[tid]) return;
+    (tb.statistics || []).forEach(function(blk){
+      (blk.athletes || []).forEach(function(a){
+        var ath = a.athlete || {}, pid = String(ath.id || '');
+        if (!pid) return;
+        names[pid] = ath.shortName || ath.displayName || '?';
+        teamOf[pid] = tid;
+        if (a.starter) starters[tid].add(pid);
+      });
+    });
+  });
+  ids.forEach(function(t){ on[t] = new Set(starters[t]); });
+  var fta = {}, pf = {}, pts = {}, qpts = {};
+  function bump(o, k, v){ o[k] = (o[k] || 0) + v; }
+  ((data || {}).plays || []).forEach(function(p){
+    var typ = typeText(p), low = typ.toLowerCase(), parts = partIds(p), tid = String((p.team || {}).id || '');
+    if (low.indexOf('substitution') >= 0 && parts.length >= 2 && on[tid]) { on[tid].delete(parts[1]); on[tid].add(parts[0]); }
+    if (!parts.length || !parts[0]) return;
+    if (low.indexOf('free throw') >= 0 && low.indexOf('technical') < 0) bump(fta, parts[0], 1);
+    var k = foulKind(NBA, typ);
+    if (k === 'team' || k === 'offensive' || k === 'double') bump(pf, parts[0], 1);
+    if (p.scoringPlay) {
+      bump(pts, parts[0], toInt(p.scoreValue));
+      if (per(p) === period) bump(qpts, parts[0], toInt(p.scoreValue));
+    }
+  });
+  var known = ids.every(function(t){ return on[t].size === 5; }), out = {};
+  ids.forEach(function(t){
+    var pool = known ? Array.from(on[t]) : Object.keys(names).filter(function(pid){ return teamOf[pid] === t && (fta[pid] || pts[pid] || pf[pid]); });
+    pool = pool.filter(function(pid){ return pid in names; });
+    pool.sort(function(x, y){ return ((fta[y] || 0) - (fta[x] || 0)) || ((pts[y] || 0) - (pts[x] || 0)); });
+    out[t] = pool.slice(0, 2).map(function(pid){ return {name: names[pid], fta: fta[pid] || 0, qpts: qpts[pid] || 0, pf: pf[pid] || 0}; });
+  });
+  return [out, known];
+}
+
+// ------------------------------------------------------------------ games
+function newGame(id, league){
+  return {id: id, league: league, name: '', start: 0, neutral: false, state: '', statusName: '', detail: '', period: 0,
+          clock: null, regPeriods: 0, rules: '', teams: [], hasPbp: false, countedBucket: 0, pregameTotal: null,
+          periodPts: [0, 0], drawers: {}, lineupKnown: false, fetchedAt: 0, error: '', nextPoll: 0, inflight: false};
+}
+var BREAKS = {STATUS_HALFTIME: 1, STATUS_END_PERIOD: 1, STATUS_END_OF_PERIOD: 1};
+function isBreak(g){ var d = (g.detail || '').toLowerCase(); return !!BREAKS[g.statusName] || d.indexOf('halftime') >= 0 || d.indexOf('end of') === 0; }
+function isLive(g){ return g.state === 'in'; }
+function gameTier(g){ if (!g.hasPbp || g.teams.length !== 2) return 0; return Math.min(g.teams[0].tier, g.teams[1].tier); }
+function parseIso(s){
+  if (!s) return 0;
+  var t = Date.parse(String(s));
+  if (!isFinite(t)) t = Date.parse(String(s).replace(/(T\d\d:\d\d)Z$/, '$1:00Z'));  // "2026-11-13T00:00Z"
+  return isFinite(t) ? t / 1000 : 0;
+}
+function parseStatus(st){
+  st = st || {};
+  var typ = st.type || {}, clock = typeof st.clock === 'number' ? st.clock : clockSeconds(st.displayClock);
+  return {state: typ.state || '', statusName: typ.name || '', detail: typ.shortDetail || typ.detail || '', period: toInt(st.period), clock: clock};
+}
+function parseCompetitors(comp){
+  var teams = (comp.competitors || []).map(function(c){
+    var t = c.team || {};
+    return {id: String(t.id || c.id || ''), abbr: t.abbreviation || t.shortDisplayName || '?',
+            name: t.shortDisplayName || t.name || t.displayName || '', home: c.homeAway === 'home', score: toInt(c.score)};
+  });
+  teams.sort(function(a, b){ return (a.home ? 1 : 0) - (b.home ? 1 : 0); });
+  return teams;
+}
+function parseScoreboard(league, data){
+  return ((data || {}).events || []).map(function(ev){
+    var comp = (ev.competitions || [{}])[0] || {}, st = parseStatus(comp.status || ev.status);
+    return {id: String(ev.id || comp.id || ''), league: league, name: ev.shortName || ev.name || '',
+            start: parseIso(ev.date || comp.date), neutral: !!comp.neutralSite, teams: parseCompetitors(comp),
+            state: st.state, statusName: st.statusName, detail: st.detail, period: st.period, clock: st.clock};
+  }).filter(function(e){ return e.id && e.teams.length === 2; });
+}
+function syncTeams(g, teams){
+  if (teams.length !== 2) return;
+  var same = g.teams.length === 2 && g.teams[0].id === teams[0].id && g.teams[1].id === teams[1].id;
+  if (!same) {
+    g.teams = teams.map(function(t){ return {id: t.id, abbr: t.abbr, name: t.name, home: t.home, score: t.score,
+      fouls: 0, last2: 0, techs: 0, last: '', tone: 0, tier: 0, badge: ''}; });
+    return;
+  }
+  g.teams.forEach(function(t, i){ t.abbr = teams[i].abbr || t.abbr; t.name = teams[i].name || t.name; t.score = Math.max(t.score, teams[i].score); });
+}
+function updateTeamStatus(g){
+  g.teams.forEach(function(t){ var r = teamStatus(g.rules, Math.max(g.period, 1), t.fouls, t.last2, g.clock); t.tone = r[0]; t.tier = r[1]; t.badge = r[2]; });
+}
+function applyEvent(g, ev){
+  var waiting = !isLive(g) || isBreak(g);
+  g.name = ev.name || g.name; g.start = ev.start || g.start; g.neutral = ev.neutral;
+  if (ev.state) g.state = ev.state;
+  if (ev.statusName) g.statusName = ev.statusName;
+  if (ev.detail) g.detail = ev.detail;
+  if (!g.rules) g.rules = rulesFor(g.league, g.regPeriods || null);
+  if (ev.period && ev.period !== g.period) {
+    if (g.countedBucket && foulBucket(g.rules, ev.period) !== g.countedBucket) {
+      g.teams.forEach(function(t){ t.fouls = t.last2 = t.techs = 0; t.last = ''; });
+      g.periodPts = [0, 0]; g.drawers = {};
+      g.countedBucket = foulBucket(g.rules, ev.period);
+      g.nextPoll = 0;
+    }
+    g.period = ev.period;
+  }
+  if (ev.clock !== null && ev.clock !== undefined) g.clock = ev.clock;
+  syncTeams(g, ev.teams);
+  if (waiting && isLive(g) && !isBreak(g)) g.nextPoll = 0;
+  updateTeamStatus(g);
+}
+function applySummary(g, data){
+  data = data || {};
+  var hdr = data.header || {}, comp = (hdr.competitions || [{}])[0] || {}, st = parseStatus(comp.status);
+  if (st.state) g.state = st.state;
+  if (st.statusName) g.statusName = st.statusName;
+  if (st.detail) g.detail = st.detail;
+  var reg = ((data.format || {}).regulation || {}).periods;
+  if (reg) g.regPeriods = toInt(reg);
+  g.rules = rulesFor(g.league, g.regPeriods || null);
+  syncTeams(g, parseCompetitors(comp));
+  var plays = data.plays || [];
+  g.hasPbp = plays.length > 0;
+  var last = plays.length ? plays[plays.length - 1] : {}, lastPeriod = per(last);
+  g.period = Math.max(st.period, lastPeriod, g.period);
+  var clock = st.clock;
+  if ((clock === null || clock === undefined) && lastPeriod === g.period) clock = clockSeconds((last.clock || {}).displayValue);
+  if (clock !== null && clock !== undefined) g.clock = clock;
+  if (plays.length && g.teams.length === 2) {
+    g.teams[0].score = Math.max(g.teams[0].score, toInt(last.awayScore));
+    g.teams[1].score = Math.max(g.teams[1].score, toInt(last.homeScore));
+  }
+  var p = Math.max(g.period, 1), ids = g.teams.map(function(t){ return t.id; }), counts = countFouls(g.rules, plays, ids, p);
+  g.teams.forEach(function(t){ var c = counts[t.id] || {}; t.fouls = c.fouls || 0; t.last2 = c.last2 || 0; t.techs = c.techs || 0; t.last = c.last || ''; });
+  g.countedBucket = foulBucket(g.rules, p);
+  (data.pickcenter || []).some(function(pc){ var ou = parseFloat(pc && pc.overUnder); if (isFinite(ou) && ou > 0) { g.pregameTotal = ou; return true; } return false; });
+  if (g.teams.length === 2) {
+    var base = periodStartScore(g.rules, plays, p);
+    g.periodPts = [Math.max(0, g.teams[0].score - base[0]), Math.max(0, g.teams[1].score - base[1])];
+    if (g.rules === NBA) { var dr = foulDrawers(data, ids, p); g.drawers = dr[0]; g.lineupKnown = dr[1]; }
+  }
+  updateTeamStatus(g);
+}
+function projection(g){
+  if ((g.rules !== NBA && g.rules !== HALVES) || g.clock === null || g.clock === undefined || g.teams.length !== 2 || !g.hasPbp) return null;
+  var lg = g.league, reg = g.regPeriods || (g.rules === NBA ? 4 : 2), plen = g.rules === NBA ? 720 : 1200, p = Math.max(g.period, 1);
+  var elapsed = p <= reg ? (p - 1) * plen + (plen - g.clock) : reg * plen + (p - reg - 1) * 300 + (300 - g.clock);
+  var pre = g.pregameTotal ? g.pregameTotal / (reg * plen / 60) : LEAGUE_RATE[lg];
+  var rate = (g.teams[0].score + g.teams[1].score + pre * 12) / (elapsed / 60 + 12);
+  var tiers = [g.teams[0].tier, g.teams[1].tier], state;
+  if (g.rules === HALVES && Math.min.apply(null, tiers) >= 3) state = 3;
+  else if (Math.min.apply(null, tiers) >= 2) state = 2;
+  else if (Math.max.apply(null, tiers) >= 2) state = 1;
+  else state = 0;
+  var adj = PACE_ADJ[lg], mins = g.clock / 60, soFar = g.periodPts[0] + g.periodPts[1];
+  var pace = soFar + mins * (rate + adj[0]), bonus = mins * (adj[state] - adj[0]);
+  var label = g.rules === NBA ? periodLabel(g.rules, p, reg) : (p <= 1 ? '1st half' : '2nd half');
+  function r1(x){ return Math.round(x * 10) / 10; }
+  return {label: label, so_far: soFar, pace: r1(pace), bonus: r1(bonus), total: r1(pace + bonus),
+          if_both: r1(mins * (adj[2] - adj[0])), state: state,
+          player_bump: (g.rules === NBA && state >= 2) ? r1(PLAYER_BUMP * mins) : 0,
+          ok: g.clock >= PROJ_MIN_LEFT[lg] && !isBreak(g)};
+}
+function alertText(g, tier){
+  var a = g.teams[0], h = g.teams[1], matchup = a.abbr + (g.neutral ? ' vs ' : ' @ ') + h.abbr;
+  var what = {
+    'nba:1': 'one more foul each and every common foul is 2 FTs',
+    'nba:2': 'every common foul by either team is 2 FTs',
+    'ncaa_halves:1': 'one more foul each and every foul is a 1-and-1',
+    'ncaa_halves:2': 'every non-offensive foul by either team is a 1-and-1',
+    'ncaa_halves:3': 'every non-offensive foul by either team is 2 shots',
+    'ncaa_quarters:1': 'one more foul each and every foul is 2 shots',
+    'ncaa_quarters:2': 'every non-offensive foul by either team is 2 shots'}[g.rules + ':' + tier] || '';
+  var when = (periodLabel(g.rules, g.period, g.regPeriods) + ' ' + fmtClock(g.clock) + ' left').trim();
+  var fouls = 'Team fouls ' + a.abbr + ' ' + a.fouls + ', ' + h.abbr + ' ' + h.fouls + ': ' + what + '.';
+  if (g.rules === HALVES && g.period > 2) fouls += ' Overtime: fouls carry over from the 2nd half.';
+  var pj = projection(g), lines;
+  if (pj && pj.ok) {
+    var extra = pj.bonus > 0 ? 'with the bonus ~' + pj.total.toFixed(1) + ' (+' + pj.bonus.toFixed(1) + ')' : '+' + pj.if_both.toFixed(1) + ' if both reach the bonus';
+    lines = [when + '. ' + pj.label + ' total: ' + pj.so_far + ' so far (' + a.abbr + ' ' + g.periodPts[0] + '-' + g.periodPts[1] + ' ' + h.abbr + '), pace ' + pj.pace.toFixed(1) + ', ' + extra + '.', fouls];
+  } else {
+    lines = [when + '. ' + fouls];
+  }
+  if (g.rules === NBA && g.drawers) {
+    var label = pj ? pj.label : 'this quarter', who = [];
+    g.teams.forEach(function(t){ var d = (g.drawers[t.id] || [])[0]; if (d) who.push(t.abbr + ' ' + d.name + ' ' + d.fta + ' FTA, ' + d.qpts + ' pts in ' + label + ', ' + d.pf + ' PF'); });
+    if (who.length) lines.push((g.lineupKnown ? 'On the floor: ' : 'Top foul-drawers: ') + who.join('; ') +
+      ((pj && pj.ok && pj.player_bump) ? ' (the bonus adds ~' + pj.player_bump.toFixed(1) + ' pts each)' : '') + '.');
+  }
+  lines.push('Score ' + a.abbr + ' ' + a.score + '-' + h.score + ' ' + h.abbr + '.');
+  return {title: headline(g.rules, tier) + ': ' + matchup, body: lines.join('\n')};
+}
+
+// ------------------------------------------------------------------ alerts
+var ctx = {alerted: store.alerted, log: store.log, prefix: '', persist: true};
+function isStarred(id){ return store.starred.indexOf(id) >= 0; }
+function evaluate(g){
+  if (!isLive(g) || isBreak(g) || g.teams.length !== 2 || !g.hasPbp) return [];
+  var top = (g.rules === HALVES && S.doubleBonus) ? 3 : 2, tier = Math.min(gameTier(g), top);
+  if (tier <= 0 || (tier === 1 && !S.headsUp)) return [];
+  var key = g.id + ':' + g.period + ':' + tier;
+  if (ctx.alerted[key]) return [];
+  var now = Date.now() / 1000;
+  for (var t = 1; t <= tier; t++) { var k = g.id + ':' + g.period + ':' + t; if (!ctx.alerted[k]) ctx.alerted[k] = now; }
+  var mode = S.push[g.league] || 'all', outcome;
+  if (g.clock !== null && g.clock !== undefined && g.clock < (S.minLeft[g.league] || 0)) outcome = 'late';
+  else if (mode === 'off') outcome = 'off';
+  else if (mode === 'starred' && !isStarred(g.id)) outcome = 'muted';
+  else outcome = 'alerted';
+  var txt = alertText(g, tier);
+  var entry = {at: now, game: g.id, league: g.league, period: g.period, tier: tier, title: ctx.prefix + txt.title, body: txt.body, outcome: outcome};
+  ctx.log.push(entry);
+  if (ctx.log.length > 80) ctx.log.splice(0, ctx.log.length - 80);
+  if (ctx.persist) save();
+  return outcome === 'alerted' ? [entry] : [];
+}
+
+// ------------------------------------------------------------------ fetching
+var queue = [], active = 0, lastStart = 0, pumpTimer = null;
+function request(url){
+  return new Promise(function(resolve, reject){ queue.push({url: url, resolve: resolve, reject: reject}); pump(); });
+}
+function pump(){
+  while (active < MAX_ACTIVE && queue.length) {
+    var wait = lastStart + 1000 / RPS - Date.now();
+    if (wait > 0) { if (!pumpTimer) pumpTimer = setTimeout(function(){ pumpTimer = null; pump(); }, wait); return; }
+    var job = queue.shift();
+    lastStart = Date.now(); active++;
+    run(job);
+  }
+}
+function run(job){
+  fetch(job.url, {cache: 'no-store'}).then(function(r){
+    if (!r.ok) throw new Error('ESPN answered ' + r.status);
+    return r.json();
+  }).then(job.resolve, function(e){ job.reject(e instanceof TypeError ? new Error("can't reach ESPN") : e); })
+    .then(function(){ active--; pump(); });
+}
+function etParts(d){
+  var parts = {};
+  new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23'})
+    .formatToParts(d || new Date()).forEach(function(p){ parts[p.type] = p.value; });
+  return parts;
+}
+function scoreboardDates(){
+  var p = etParts(), list = [p.year + p.month + p.day];
+  if (parseInt(p.hour, 10) < 6) {  // late West Coast games still belong to yesterday
+    var y = new Date(Date.UTC(+p.year, +p.month - 1, +p.day) - 86400000);
+    list.unshift(y.getUTCFullYear() + String(y.getUTCMonth() + 1).padStart(2, '0') + String(y.getUTCDate()).padStart(2, '0'));
+  }
+  return list;
+}
+var liveFeed = {
+  scoreboard: function(league){
+    var path = LEAGUES[league].path;
+    return Promise.all(scoreboardDates().map(function(d){
+      var q = '?dates=' + d + (league === 'ncaab' ? '&limit=500' + (S.scope === 'all' ? '&groups=50' : '') : '');
+      return request(API + '/' + path + '/scoreboard' + q);
+    })).then(function(datas){
+      var seen = {}, out = [];
+      datas.forEach(function(data){ parseScoreboard(league, data).forEach(function(ev){ if (!seen[ev.id]) { seen[ev.id] = 1; out.push(ev); } }); });
+      return out;
+    });
+  },
+  summary: function(league, id){ return request(API + '/' + LEAGUES[league].path + '/summary?event=' + encodeURIComponent(id)); }
+};
+
+// ------------------------------------------------------------------ replay
+function ReplayGame(data, league, startPeriod){
+  var fmt = data.format || {}, reg = fmt.regulation || {};
+  this.data = data; this.league = league;
+  this.regPeriods = toInt(reg.periods) || (league === 'nba' ? 4 : 2);
+  this.regLen = parseFloat(reg.clock) || (league === 'nba' ? 720 : 1200);
+  this.otLen = parseFloat((fmt.overtime || {}).clock) || 300;
+  this.plays = data.plays || [];
+  var self = this, pers = this.plays.map(per);
+  this.lastPeriod = Math.max.apply(null, pers.concat([this.regPeriods]));
+  this.elapsed = this.plays.map(function(p, i){
+    var pr = Math.max(pers[i], 1), c = clockSeconds((p.clock || {}).displayValue);
+    return self.startOf(pr) + self.periodLen(pr) - (c === null ? 0 : c);
+  });
+  this.offset = this.startOf(Math.max(1, Math.min(startPeriod || 1, this.lastPeriod)));
+  var comp = data.header.competitions[0];
+  this.id = String(data.header.id || comp.id);
+}
+ReplayGame.prototype.periodLen = function(p){ return p <= this.regPeriods ? this.regLen : this.otLen; };
+ReplayGame.prototype.startOf = function(p){ var s = 0; for (var i = 1; i < p; i++) s += this.periodLen(i); return s; };
+ReplayGame.prototype.total = function(){ return this.startOf(this.lastPeriod + 1); };
+ReplayGame.prototype.stateAt = function(sim){
+  if (sim >= this.total()) return ['post', this.lastPeriod, 0];
+  var p = 1;
+  while (p < this.lastPeriod && this.startOf(p + 1) <= sim) p++;
+  return ['in', p, Math.max(0, this.periodLen(p) - (sim - this.startOf(p)))];
+};
+ReplayGame.prototype.comp = function(sim){
+  var comp = JSON.parse(JSON.stringify(this.data.header.competitions[0])), s = this.stateAt(sim);
+  var label = periodLabel(rulesFor(this.league, this.regPeriods), s[1], this.regPeriods);
+  var detail = s[0] === 'in' ? fmtClock(s[2]) + ' - ' + label : 'Final';
+  comp.status = {clock: s[2], displayClock: fmtClock(s[2]), period: s[1],
+                 type: {name: s[0] === 'in' ? 'STATUS_IN_PROGRESS' : 'STATUS_FINAL', state: s[0], completed: s[0] === 'post', detail: detail, shortDetail: detail}};
+  var shown = this.shown(sim), last = shown.length ? shown[shown.length - 1] : {};
+  (comp.competitors || []).forEach(function(c){ c.score = String(toInt(c.homeAway === 'home' ? last.homeScore : last.awayScore)); });
+  return comp;
+};
+ReplayGame.prototype.shown = function(sim){ var el = this.elapsed; return this.plays.filter(function(p, i){ return el[i] <= sim; }); };
+ReplayGame.prototype.rawEvent = function(sim){
+  var comp = this.comp(sim), t = parseCompetitors(comp), name = t.length === 2 ? t[0].abbr + ' @ ' + t[1].abbr : this.id;
+  return {id: this.id, date: comp.date, name: name, shortName: name, competitions: [comp]};
+};
+ReplayGame.prototype.rawSummary = function(sim){
+  var hdr = Object.assign({}, this.data.header);
+  hdr.competitions = [this.comp(sim)];
+  return {header: hdr, format: this.data.format, boxscore: this.data.boxscore, pickcenter: this.data.pickcenter, plays: this.shown(sim)};
+};
+function leagueOf(data){
+  var slug = String(((data.header || {}).league || {}).slug || '');
+  if (slug === 'nba') return 'nba';
+  if (slug.indexOf('college') >= 0) return 'ncaab';
+  return toInt((((data.format || {}).regulation) || {}).periods) === 2 ? 'ncaab' : 'nba';
+}
+var replay = null;   // {rg, t0, speed, name}
+function replayFeed(){
+  function sim(){ return (Date.now() - replay.t0) / 1000 * replay.speed + replay.rg.offset; }
+  return {
+    scoreboard: function(league){ return Promise.resolve(league === replay.rg.league ? parseScoreboard(league, {events: [replay.rg.rawEvent(sim())]}) : []); },
+    summary: function(){ return Promise.resolve(replay.rg.rawSummary(sim())); },
+    done: function(){ return sim() >= replay.rg.total(); }
+  };
+}
+function startReplay(id, from, speed){
+  var btn = $('r-go');
+  btn.disabled = true; btn.textContent = 'Loading…';
+  function load(leagues){
+    var lg = leagues[0];
+    return liveFeed.summary(lg, id).then(function(data){
+      if (!data || !data.header || !(data.plays || []).length) throw new Error('no play-by-play');
+      return data;
+    }).catch(function(e){ if (leagues.length > 1) return load(leagues.slice(1)); throw e; });
+  }
+  load(['nba', 'ncaab']).then(function(data){
+    var lg = leagueOf(data), rg = new ReplayGame(data, lg, from);
+    replay = {rg: rg, t0: Date.now(), speed: speed, finished: false};
+    feed = replayFeed();
+    games = {}; sbNext = {nba: 0, ncaab: 0}; sbBusy = {nba: false, ncaab: false};
+    ctx = {alerted: {}, log: ctx.log, prefix: 'Replay: ', persist: false};
+    $('settings').hidden = true; $('gear').setAttribute('aria-expanded', 'false');
+    dirty = true; render();
+  }).catch(function(e){
+    alert("Couldn't load that game from ESPN (" + e.message + ').');
+  }).then(function(){ btn.disabled = false; btn.textContent = 'Replay'; });
+}
+function stopReplay(){
+  replay = null; feed = liveFeed; games = {}; sbNext = {nba: 0, ncaab: 0}; sbBusy = {nba: false, ncaab: false};
+  ctx = {alerted: store.alerted, log: store.log, prefix: '', persist: true};
+  dirty = true; render();
+}
+
+// ------------------------------------------------------------------ the loop
+var feed = liveFeed, games = {}, sbNext = {nba: 0, ncaab: 0}, sbBusy = {nba: false, ncaab: false};
+var sbOk = {nba: Date.now(), ncaab: Date.now()}, sbErr = {nba: '', ncaab: ''}, sbSeen = {nba: false, ncaab: false};
+var lastUpdate = 0, dirty = true, lastRender = 0;
+function leaguesOn(){ return ORDER.filter(function(l){ return S.watch[l]; }); }
+function wantsPoll(g){ return isLive(g) && (!isBreak(g) || !g.fetchedAt); }
+function pollInterval(g){
+  if (replay) return 1000;
+  if (g.fetchedAt && !g.hasPbp) return Math.max(IDLE, 90000);
+  if (g.teams.length === 2) {
+    var need = bonusAt(g.rules, Math.max(g.period, 1)), dist = 0;
+    g.teams.forEach(function(t){ dist += Math.max(0, need - t.fouls); });
+    if (dist <= 3 || (g.rules === NBA && g.clock !== null && g.clock <= 150)) return FAST;
+  }
+  return IDLE;
+}
+function runScoreboard(lg){
+  sbBusy[lg] = true;
+  var f = feed;
+  f.scoreboard(lg).then(function(events){
+    if (f !== feed) return;
+    var seen = {};
+    events.forEach(function(ev){
+      seen[ev.id] = 1;
+      var g = games[ev.id] || (games[ev.id] = newGame(ev.id, lg));
+      applyEvent(g, ev);
+    });
+    Object.keys(games).forEach(function(id){ var g = games[id]; if (g.league === lg && !seen[id] && !isLive(g)) delete games[id]; });
+    sbOk[lg] = Date.now(); sbErr[lg] = ''; sbSeen[lg] = true; lastUpdate = Date.now(); dirty = true;
+  }).catch(function(e){ sbErr[lg] = e.message || String(e); dirty = true; })
+    .then(function(){ sbBusy[lg] = false; sbNext[lg] = Date.now() + (replay ? 1000 : SCOREBOARD); });
+}
+function runSummary(g){
+  g.inflight = true;
+  var f = feed;
+  f.summary(g.league, g.id).then(function(data){
+    if (f !== feed) return;
+    applySummary(g, data);
+    g.fetchedAt = Date.now(); g.error = '';
+    evaluate(g).forEach(fire);
+    dirty = true;
+  }).catch(function(e){ g.error = e.message || String(e); dirty = true; })
+    .then(function(){ g.inflight = false; g.nextPoll = Date.now() + pollInterval(g); });
+}
+function tick(){
+  var now = Date.now();
+  leaguesOn().forEach(function(lg){ if (now >= sbNext[lg] && !sbBusy[lg]) runScoreboard(lg); });
+  // Starred games first, then NBA, then the rest (matters on busy nights while everything first loads).
+  Object.keys(games).map(function(id){ return games[id]; })
+    .filter(function(g){ return S.watch[g.league] && wantsPoll(g) && !g.inflight && now >= g.nextPoll; })
+    .sort(function(x, y){ return (isStarred(y.id) - isStarred(x.id)) || ((x.league === 'nba' ? 0 : 1) - (y.league === 'nba' ? 0 : 1)); })
+    .forEach(runSummary);
+  if (replay && !replay.finished && feed.done && feed.done()) { replay.finished = true; dirty = true; }
+  if (dirty || now - lastRender > 5000) render();
+}
+
+// ------------------------------------------------------------------ alert delivery
+var actx = null, unseen = 0, baseTitle = document.title;
+function beep(){
+  try {
+    if (navigator.audioSession) navigator.audioSession.type = 'playback';  // iPhone: play even on silent
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    var t0 = actx.currentTime;
+    [[0, 880], [0.17, 880], [0.34, 1175]].forEach(function(n){
+      var o = actx.createOscillator(), gn = actx.createGain();
+      o.type = 'sine'; o.frequency.value = n[1];
+      gn.gain.setValueAtTime(0.0001, t0 + n[0]);
+      gn.gain.exponentialRampToValueAtTime(0.3, t0 + n[0] + 0.02);
+      gn.gain.exponentialRampToValueAtTime(0.0001, t0 + n[0] + 0.15);
+      o.connect(gn); gn.connect(actx.destination);
+      o.start(t0 + n[0]); o.stop(t0 + n[0] + 0.16);
+    });
+  } catch (e) {}
+}
+// Phones can't show notifications from an ordinary web page (iOS and Android need an installed app).
+function canNotify(){ return 'Notification' in window && !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent); }
+function fire(entry){
+  if (S.sound) beep();
+  if (navigator.vibrate && navigator.userActivation && navigator.userActivation.hasBeenActive) {
+    try { navigator.vibrate([180, 90, 180]); } catch (e) {}
+  }
+  if (S.notify && canNotify() && Notification.permission === 'granted') {
+    try { new Notification(entry.title, {body: entry.body, tag: entry.game + ':' + entry.period + ':' + entry.tier}); } catch (e) {}
+  }
+  toasts.unshift(entry);
+  if (toasts.length > 3) toasts.length = 3;
+  flashIds[entry.game] = Date.now();
+  if (document.hidden) { unseen++; document.title = '(' + unseen + ') ' + entry.title; }
+  dirty = true;
+}
+document.addEventListener('visibilitychange', function(){
+  if (!document.hidden) { unseen = 0; document.title = baseTitle; if (S.wake) wake(true); }
+});
+var wakeLock = null;
+function wake(on){
+  if (!('wakeLock' in navigator)) return;
+  if (on) navigator.wakeLock.request('screen').then(function(l){ wakeLock = l; }).catch(function(){});
+  else if (wakeLock) { wakeLock.release().catch(function(){}); wakeLock = null; }
+}
+
+// ------------------------------------------------------------------ view
+var toasts = [], flashIds = {};
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function(c){ return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]; }); }
+function ago(sec){ sec = Math.max(0, Math.round(sec)); if (sec < 60) return sec + 's'; if (sec < 3600) return Math.floor(sec / 60) + 'm'; return Math.floor(sec / 3600) + 'h'; }
+function hm(ts){ try { return new Date(ts * 1000).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'}); } catch (e) { return ''; } }
+function gameView(g, now){
+  var p = Math.max(g.period, 1), pips = pipSpec(g.rules || NBA, p), plabel = periodLabel(g.rules, g.period, g.regPeriods), when, whenShort, note = '';
+  if (isBreak(g)) { when = whenShort = g.detail || 'Break'; note = (g.rules === HALVES && g.period >= 2) ? 'fouls carry into OT' : 'fouls reset'; }
+  else {
+    when = plabel ? plabel + ' · ' + fmtClock(g.clock) : (g.detail || '');
+    var short = {'1st half': 'H1', '2nd half': 'H2'}[plabel] || plabel;
+    whenShort = short ? short + ' · ' + fmtClock(g.clock) : when;
+  }
+  var alertE = null;
+  for (var i = ctx.log.length - 1; i >= 0; i--) { var e = ctx.log[i]; if (e.game === g.id && e.period === g.period) { alertE = e; break; } }
+  var tier = gameTier(g);
+  return {g: g, id: g.id, league: g.league, label: LEAGUES[g.league].label, state: isBreak(g) ? 'break' : 'live',
+          when: when, whenShort: whenShort, note: note, tier: tier, headline: headline(g.rules, tier),
+          pipsMax: pips[0], marks: pips[1], starred: isStarred(g.id), hasPbp: g.hasPbp, loaded: !!g.fetchedAt,
+          age: g.fetchedAt ? (now - g.fetchedAt) / 1000 : null, error: g.error, alert: alertE, proj: projection(g),
+          drawers: g.rules === NBA && g.drawers ? g.teams.map(function(t){ return (g.drawers[t.id] || []).slice(0, 2); }) : [],
+          lineupKnown: g.lineupKnown, teams: g.teams};
+}
+function pipsHtml(v, t){
+  var h = '<span class="pips" aria-hidden="true">';
+  for (var i = 1; i <= v.pipsMax; i++) h += '<i class="pip' + (i <= t.fouls ? ' on' : '') + (v.marks.indexOf(i) >= 0 ? ' mark' : '') + '"></i>';
+  return h + '</span>';
+}
+function starBtn(v){
+  return '<button class="star" data-star="' + esc(v.id) + '" aria-pressed="' + (v.starred ? 'true' : 'false') + '" aria-label="' +
+    (v.starred ? 'Unstar' : 'Star') + ' this game">' + (v.starred ? '★' : '☆') + '</button>';
+}
+function teamRow(v, t){
+  return '<div class="team t' + t.tone + '"><span class="abbr">' + esc(t.abbr) + '</span><span class="score">' + t.score + '</span>' +
+    '<span class="bar">' + pipsHtml(v, t) + '<span class="n" title="' + esc(t.last) + '">' + t.fouls + '</span></span>' +
+    '<span class="badge">' + esc(t.badge) + '</span></div>';
+}
+function alertNote(v, now){
+  var a = v.alert;
+  if (!a) return '';
+  var why = {alerted: 'alerted ' + ago(now / 1000 - a.at) + ' ago', muted: 'no alert: starred games only',
+             off: 'no alert: alerts off', late: 'no alert: under ' + fmtClock(S.minLeft[v.league]) + ' left'};
+  return ' · ' + (why[a.outcome] || '');
+}
+function extraHtml(v){
+  var p = v.proj, h = '';
+  if (p) {
+    h += '<div class="xcap">' + esc(p.label) + ' total</div><div class="stats3"><div><b>' + p.so_far + '</b><span>so far</span></div>';
+    if (p.ok) {
+      h += '<div><b>' + p.pace.toFixed(1) + '</b><span>at this pace</span></div>';
+      h += p.bonus > 0 ? '<div class="hi"><b>' + p.total.toFixed(1) + '</b><span>with the bonus (+' + p.bonus.toFixed(1) + ')</span></div>'
+                       : '<div class="hi"><b>+' + p.if_both.toFixed(1) + '</b><span>if both reach the bonus</span></div>';
+    } else {
+      h += '<div><b>–</b><span>too little time left to project</span></div><div></div>';
+    }
+    h += '</div>';
+  }
+  var rows = '';
+  v.drawers.forEach(function(list, i){
+    if (i && rows) rows += '<span class="gap"></span>';
+    list.forEach(function(d, j){
+      rows += '<span class="pt">' + (j ? '' : esc(v.teams[i].abbr)) + '</span><span class="pn">' + esc(d.name) + '</span>' +
+        '<span class="pv">' + d.fta + '</span><span class="pv">' + d.qpts + '</span><span class="pv">' + d.pf + '</span>';
+    });
+  });
+  if (rows) {
+    h += '<div class="xcap">' + (v.lineupKnown ? 'On the floor · most free throws' : 'Most free throws (lineup unknown)') + '</div>' +
+      '<div class="ptab"><span></span><span></span><span class="h">FTA</span><span class="h">' + esc(p ? p.label : 'QTR') + ' PTS</span><span class="h">PF</span>' + rows + '</div>';
+    if (p && p.ok && p.player_bump) h += '<div class="note">The bonus adds about <b class="up">+' + p.player_bump.toFixed(1) + '</b> pts to each team\'s top foul-drawer from here.</div>';
+  }
+  return h ? '<div class="xtra">' + h + '</div>' : '';
+}
+function cardHtml(v, now){
+  var tone = v.tier >= 3 ? 'double' : v.tier === 2 ? 'bonus' : v.tier === 1 ? 'near' : '';
+  var flash = flashIds[v.id] && now - flashIds[v.id] < 4000 ? ' flash' : '';
+  var stale = (v.age !== null && v.age > 75) ? ' · feed ' + ago(v.age) + ' old' : '';
+  return '<article class="card ' + tone + flash + '">' +
+    '<div class="chead"><span class="lg">' + esc(v.label) + '</span><span class="when">' + esc(v.when) + '</span>' + starBtn(v) + '</div>' +
+    '<div class="teams">' + teamRow(v, v.teams[0]) + teamRow(v, v.teams[1]) + '</div>' + extraHtml(v) +
+    '<div class="cfoot"><b>' + esc(v.headline) + '</b>' + esc(alertNote(v, now)) + esc(stale) + (v.error ? ' · ' + esc(v.error) : '') + '</div></article>';
+}
+function rowHtml(v, mode){
+  var a = v.teams[0], h = v.teams[1], m;
+  if (mode === 'nopbp' || !v.loaded) m = '<span>' + esc(a.abbr) + ' ' + a.score + '</span><span>' + esc(h.abbr) + ' ' + h.score + '</span>';
+  else {
+    var ta = mode === 'break' ? '' : ' class="t' + a.tone + '"', th = mode === 'break' ? '' : ' class="t' + h.tone + '"';
+    m = '<span' + ta + '>' + esc(a.abbr) + ' <b>' + a.fouls + '</b></span><span' + th + '>' + esc(h.abbr) + ' <b>' + h.fouls + '</b></span>';
+  }
+  var sub = !v.loaded ? '<span class="sub">loading fouls…</span>' : (mode === 'break' ? '<span class="sub">' + esc(v.note) + '</span>' : '');
+  return '<div class="row"><span class="lg">' + esc(v.label) + '</span><span class="m">' + m + '</span><span class="when">' +
+    esc(v.whenShort) + sub + '</span>' + starBtn(v) + '</div>';
+}
+function section(title, list, fn, mode, now){
+  if (!list.length) return '';
+  var inner = list.map(function(v){ return fn(v, fn === rowHtml ? mode : now); }).join('');
+  return '<h2>' + esc(title) + '<span class="count">' + list.length + '</span></h2>' + (fn === rowHtml ? '<div class="rows">' + inner + '</div>' : inner);
+}
+function render(){
+  dirty = false; lastRender = Date.now();
+  var now = Date.now(), lgs = leaguesOn();
+  document.querySelectorAll('[data-f]').forEach(function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-f') === S.filter ? 'true' : 'false'); });
+  var views = Object.keys(games).map(function(id){ return games[id]; }).filter(function(g){ return isLive(g) && g.teams.length === 2 && S.watch[g.league]; })
+    .map(function(g){ return gameView(g, now); });
+  views.sort(function(x, y){
+    return (y.tier - x.tier) || ((x.state === 'break') - (y.state === 'break')) || (ORDER.indexOf(x.league) - ORDER.indexOf(y.league)) ||
+      ((y.teams[0].fouls + y.teams[1].fouls) - (x.teams[0].fouls + x.teams[1].fouls)) || (x.id < y.id ? -1 : 1);
+  });
+  var counts = {nba: 0, ncaab: 0};
+  views.forEach(function(v){ counts[v.league]++; });
+  var problem = lgs.filter(function(l){ return sbErr[l] && now - sbOk[l] > 60000; })
+    .map(function(l){ return LEAGUES[l].label + ': ' + sbErr[l]; }).join('; ');
+  var ready = lgs.every(function(l){ return sbSeen[l]; }), dot = $('dot'), txt;
+  if (problem) { dot.className = 'dot bad'; txt = "Can't reach ESPN"; }
+  else if (!ready) { dot.className = 'dot idle'; txt = 'Loading games…'; }
+  else if (!views.length) { dot.className = 'dot idle'; txt = replay ? 'Replay' : 'No live games'; }
+  else { dot.className = 'dot'; txt = (replay ? 'Replay' : 'Live') + ' · ' + lgs.map(function(l){ return counts[l] + ' ' + LEAGUES[l].label; }).join(' · '); }
+  if (lastUpdate && !replay) txt += ' · updated ' + ago((now - lastUpdate) / 1000) + ' ago';
+  $('statustext').textContent = txt;
+
+  var b = '';
+  if (replay) {
+    b += '<div class="banner replay"><span><b>Replay at ' + replay.speed + 'x.</b> ' + (replay.finished ? 'Finished. ' : '') +
+      'Alerts here are marked "Replay" and aren\'t saved.</span><button class="btn" id="r-stop">Back to live games</button></div>';
+  }
+  if (problem) b += '<div class="banner bad">' + esc(problem) + '. Retrying; counts are frozen until ESPN answers.</div>';
+  if (!S.sound && !S.notify) b += '<div class="banner">Alerts show on this page only. Turn on sound or notifications in Settings to hear them.</div>';
+  $('banners').innerHTML = b;
+
+  $('toasts').innerHTML = toasts.map(function(e, i){
+    return '<div class="toast" role="status"><div><b>' + esc(e.title) + '</b><span>' + esc(e.body.split('\n')[0]) + '</span></div><button data-toast="' + i + '">Dismiss</button></div>';
+  }).join('');
+
+  renderSettings();
+
+  var shown = views.filter(function(v){ return S.filter === 'all' || (S.filter === 'star' ? v.starred : v.league === S.filter); });
+  var hot = [], near = [], rest = [], brk = [], nop = [];
+  shown.forEach(function(v){
+    if (v.state === 'break') brk.push(v);
+    else if (!v.loaded) rest.push(v);
+    else if (!v.hasPbp) nop.push(v);
+    else if (v.tier >= 2) hot.push(v);
+    else if (v.tier === 1) near.push(v);
+    else rest.push(v);
+  });
+  var html = section('Both teams in the bonus', hot, cardHtml, null, now) + section('Both one foul away', near, cardHtml, null, now) +
+    section('Other live games', rest, rowHtml, 'live') + section('At a break', brk, rowHtml, 'break') + section('Live, no play-by-play', nop, rowHtml, 'nopbp');
+  if (!html) {
+    var msg;
+    if (S.filter === 'star') msg = 'No starred games are live. Tap ☆ on a game to star it.';
+    else if (!ready) msg = "Loading today's games…";
+    else if (replay) msg = replay.finished ? 'The replay has finished.' : 'Starting the replay…';
+    else {
+      msg = 'No live games right now.';
+      var next = Object.keys(games).map(function(id){ return games[id]; }).filter(function(g){ return g.state === 'pre' && g.start * 1000 > now - 3600000 && S.watch[g.league]; })
+        .sort(function(x, y){ return x.start - y.start; })[0];
+      if (next) msg += ' Next: ' + esc(LEAGUES[next.league].label) + ' ' + esc(next.name) + ' at ' + hm(next.start) + '.';
+      msg += ' To see how it works, open Settings and replay a finished game.';
+    }
+    html = '<p class="empty">' + msg + '</p>';
+  }
+  $('main').innerHTML = html;
+
+  var lg = ctx.log.slice(-25).reverse().map(function(e){
+    var tag = {alerted: 'alerted', muted: 'muted', off: 'off', late: 'too late'}[e.outcome] || e.outcome;
+    return '<li><time>' + hm(e.at) + '</time><div><b>' + esc(e.title) + '</b><span>' + esc(e.body) + '</span></div><span class="tag ' + esc(e.outcome) + '">' + esc(tag) + '</span></li>';
+  }).join('');
+  $('log').innerHTML = lg || '<li><time></time><div><span>No alerts yet.</span></div><span></span></li>';
+}
+function onOff(id, on, label){ var b = $(id); b.textContent = label || (on ? 'On' : 'Off'); b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.classList.toggle('primary', !!on); }
+function renderSettings(){
+  if ($('settings').hidden) return;
+  $('segs').innerHTML = ORDER.map(function(l){
+    return '<div class="setrow"><span>' + LEAGUES[l].label + '</span><div class="seg" data-league="' + l + '">' +
+      [['all', 'All games'], ['starred', 'Starred'], ['off', 'Off']].map(function(o){
+        return '<button data-m="' + o[0] + '" aria-pressed="' + (S.push[l] === o[0] ? 'true' : 'false') + '">' + o[1] + '</button>';
+      }).join('') + '</div></div>';
+  }).join('');
+  onOff('t-sound', S.sound); onOff('t-heads', S.headsUp); onOff('t-double', S.doubleBonus);
+  onOff('w-nba', S.watch.nba, 'NBA'); onOff('w-ncaab', S.watch.ncaab, 'NCAAB');
+  $('row-notify').hidden = !canNotify();
+  if (canNotify()) onOff('t-notify', S.notify && Notification.permission === 'granted');
+  $('row-wake').hidden = !('wakeLock' in navigator);
+  onOff('t-wake', S.wake);
+  $('s-min-nba').value = String(S.minLeft.nba); $('s-min-ncaab').value = String(S.minLeft.ncaab);
+  document.querySelectorAll('[data-scope]').forEach(function(x){ x.setAttribute('aria-pressed', x.getAttribute('data-scope') === S.scope ? 'true' : 'false'); });
+  $('alerthint').textContent = canNotify() ? '' : 'This browser can\'t show notifications from a web page; use sound and keep the screen on.';
+}
+
+// ------------------------------------------------------------------ controls
+document.addEventListener('click', function(e){
+  var t = e.target.closest('[data-star]');
+  if (t) {
+    var id = t.getAttribute('data-star'), on = !isStarred(id);
+    store.starred = store.starred.filter(function(x){ return x !== id; });
+    if (on) store.starred.push(id);
+    store.starred = store.starred.slice(-200); save(); render(); return;
+  }
+  var f = e.target.closest('[data-f]');
+  if (f) { S.filter = f.getAttribute('data-f'); save(); render(); return; }
+  var m = e.target.closest('[data-m]');
+  if (m) { S.push[m.parentNode.getAttribute('data-league')] = m.getAttribute('data-m'); save(); render(); return; }
+  var sc = e.target.closest('[data-scope]');
+  if (sc) { S.scope = sc.getAttribute('data-scope'); save(); sbNext.ncaab = 0; render(); return; }
+  var d = e.target.closest('[data-toast]');
+  if (d) { toasts.splice(+d.getAttribute('data-toast'), 1); render(); return; }
+  if (e.target.id === 'r-stop') { stopReplay(); return; }
+});
+$('gear').addEventListener('click', function(){
+  var p = $('settings'), open = p.hidden;
+  p.hidden = !open; this.setAttribute('aria-expanded', open ? 'true' : 'false'); render();
+});
+$('t-sound').addEventListener('click', function(){ S.sound = !S.sound; save(); if (S.sound) beep(); render(); });
+$('t-notify').addEventListener('click', function(){
+  if (!canNotify()) return;
+  if (S.notify && Notification.permission === 'granted') { S.notify = false; save(); render(); return; }
+  Notification.requestPermission().then(function(p){ S.notify = p === 'granted'; save(); render(); });
+});
+$('t-wake').addEventListener('click', function(){ S.wake = !S.wake; save(); wake(S.wake); render(); });
+$('t-heads').addEventListener('click', function(){ S.headsUp = !S.headsUp; save(); render(); });
+$('t-double').addEventListener('click', function(){ S.doubleBonus = !S.doubleBonus; save(); render(); });
+$('w-nba').addEventListener('click', function(){ S.watch.nba = !S.watch.nba; save(); sbNext.nba = 0; render(); });
+$('w-ncaab').addEventListener('click', function(){ S.watch.ncaab = !S.watch.ncaab; save(); sbNext.ncaab = 0; render(); });
+$('s-min-nba').addEventListener('change', function(){ S.minLeft.nba = +this.value; save(); });
+$('s-min-ncaab').addEventListener('change', function(){ S.minLeft.ncaab = +this.value; save(); });
+$('testalert').addEventListener('click', function(){
+  if (S.sound) beep();
+  if (S.notify && canNotify() && Notification.permission === 'granted') {
+    try { new Notification('Test: 2 FTs both ways: DEN @ MEM', {body: 'If you see this, alerts work.'}); } catch (err) {}
+  }
+  toasts.unshift({title: 'Test: 2 FTs both ways: DEN @ MEM', body: 'Q3 5:42 left. Q3 total: 34 so far, pace 53.4, with the bonus ~55.7 (+2.3).', game: 'test', period: 0, tier: 2});
+  render();
+});
+$('r-go').addEventListener('click', function(){
+  var id = ($('r-id').value || '').replace(/\D/g, '');
+  if (!id) return;
+  startReplay(id, +$('r-from').value, +$('r-speed').value);
+});
+
+// ------------------------------------------------------------------ self-test (?selftest=1)
+function selftest(){
+  var lines = [], fails = 0;
+  function check(name, got, want){
+    var ok = JSON.stringify(got) === JSON.stringify(want);
+    if (!ok) fails++;
+    lines.push((ok ? 'PASS  ' : 'FAIL  ') + name + (ok ? '' : '\n      got ' + JSON.stringify(got) + ', want ' + JSON.stringify(want)));
+  }
+  [['Shooting Foul', 'team'], ['Personal Foul', 'team'], ['Loose Ball Foul', 'team'], ['Personal Take Foul', 'team'],
+   ['Transition Take Foul', 'team'], ['Away from Play Foul', 'team'], ['Flagrant Foul Type 1', 'team'], ['Clear Path Foul', 'team'],
+   ['Offensive Foul', 'offensive'], ['Offensive Charge', 'offensive'], ['Offensive Foul Turnover', null], ['Technical Foul', 'technical'],
+   ['Defensive 3-Seconds Technical', 'technical'], ['Double Technical Foul', 'technical'], ['Delay Technical', 'technical'],
+   ['Double Personal Foul', 'double'], ['Free Throw - 1 of 2', null], ['Jump Shot', null]].forEach(function(c){ check('NBA play type ' + c[0], foulKind(NBA, c[0]), c[1]); });
+  [['PersonalFoul', 'team'], ['Technical Foul', 'technical'], ['MadeFreeThrow', null]].forEach(function(c){ check('NCAAB play type ' + c[0], foulKind(HALVES, c[0]), c[1]); });
+  check('NBA 3 fouls, 5:00 left', teamStatus(NBA, 2, 3, 0, 300).slice(1), [1, '1 FROM LIMIT']);
+  check('NBA 4 fouls', teamStatus(NBA, 2, 4, 0, 300).slice(1), [2, 'AT LIMIT']);
+  check('NBA 6 fouls', teamStatus(NBA, 2, 6, 0, 300).slice(1), [2, 'PENALTY']);
+  check('NBA last 2:00, foul to give', teamStatus(NBA, 2, 1, 0, 100).slice(1), [0, 'FOUL TO GIVE']);
+  check('NBA last 2:00, foul to give used', teamStatus(NBA, 2, 2, 1, 80).slice(1), [2, 'AT LIMIT']);
+  check('NBA OT 3 fouls', teamStatus(NBA, 5, 3, 0, 200).slice(1), [2, 'AT LIMIT']);
+  check('NCAAB 6 fouls', teamStatus(HALVES, 2, 6, 0, 600).slice(1), [2, 'BONUS NEXT']);
+  check('NCAAB 9 fouls', teamStatus(HALVES, 2, 9, 0, 600).slice(1), [3, 'DOUBLE NEXT']);
+  check('NCAAB 11 fouls', teamStatus(HALVES, 2, 11, 0, 600).slice(1), [3, 'DOUBLE BONUS']);
+  function fp(team, period, clock, type){ return {type: {text: type}, team: {id: team}, period: {number: period}, clock: {displayValue: clock}}; }
+  var plays = [];
+  for (var i = 0; i < 3; i++) plays.push(fp('A', 1, '9:00', 'PersonalFoul'));
+  for (i = 0; i < 5; i++) plays.push(fp('A', 2, '1:00', 'PersonalFoul'));
+  for (i = 0; i < 2; i++) plays.push(fp('A', 3, '3:00', 'PersonalFoul'));
+  plays.push(fp('A', 3, '2:00', 'Technical Foul'));
+  check('NCAAB OT keeps the 2nd-half count', countFouls(HALVES, plays, ['A', 'B'], 3).A.fouls, 7);
+  check('NCAAB 1st half separate', countFouls(HALVES, plays, ['A', 'B'], 1).A.fouls, 3);
+  var nb = [['Personal Foul', '8:00'], ['Offensive Foul', '7:00'], ['Shooting Foul', '1:50'], ['Technical Foul', '1:40'], ['Loose Ball Foul', '45.2']]
+    .map(function(x){ return fp('A', 3, x[1], x[0]); });
+  var r = countFouls(NBA, nb, ['A', 'B'], 3).A;
+  check('NBA count skips offensive and technical', [r.fouls, r.last2, r.techs], [3, 2, 1]);
+  check('clock text', [clockSeconds('4:58'), clockSeconds('6.5'), clockSeconds('')], [298, 6.5, null]);
+  check('score when the quarter began', periodStartScore(NBA, [{period: {number: 2}, awayScore: 50, homeScore: 48}, {period: {number: 3}, awayScore: 55, homeScore: 50}], 3), [50, 48]);
+  function ath(id, starter){ return {athlete: {id: id, shortName: 'P' + id}, starter: starter, stats: ['1']}; }
+  var box = {boxscore: {players: [
+      {team: {id: '1'}, statistics: [{athletes: [0, 1, 2, 3, 4].map(function(k){ return ath('a' + k, true); }).concat([ath('a5', false)])}]},
+      {team: {id: '2'}, statistics: [{athletes: [0, 1, 2, 3, 4].map(function(k){ return ath('b' + k, true); }).concat([ath('b5', false)])}]}]},
+    plays: [{type: {text: 'Substitution'}, team: {id: '1'}, period: {number: 3}, participants: [{athlete: {id: 'a5'}}, {athlete: {id: 'a0'}}]},
+            {type: {text: 'Free Throw - 1 of 2'}, team: {id: '1'}, period: {number: 3}, scoringPlay: true, scoreValue: 1, participants: [{athlete: {id: 'a5'}}]},
+            {type: {text: 'Free Throw - 1 of 2'}, team: {id: '2'}, period: {number: 3}, scoringPlay: true, scoreValue: 1, participants: [{athlete: {id: 'b4'}}]},
+            {type: {text: 'Substitution'}, team: {id: '2'}, period: {number: 3}, participants: [{athlete: {id: 'b5'}}, {athlete: {id: 'b4'}}]}]};
+  var dr = foulDrawers(box, ['1', '2'], 3);
+  check('top foul-drawer on the floor', [dr[0]['1'][0].name, dr[0]['1'][0].qpts, dr[1]], ['Pa5', 1, true]);
+  check('benched foul-drawer not listed', dr[0]['2'].map(function(d){ return d.name; }).indexOf('Pb4'), -1);
+  var g = newGame('p', 'nba');
+  Object.assign(g, {rules: NBA, regPeriods: 4, period: 3, clock: 300, hasPbp: true, pregameTotal: 230, periodPts: [18, 16],
+    teams: [{id: '1', abbr: 'A', score: 70, tier: 2}, {id: '2', abbr: 'B', score: 66, tier: 2}]});
+  var pj = projection(g), rate = (136 + 230 / 48 * 12) / (31 + 12);
+  check('projection pace', Math.abs(pj.pace - (34 + 5 * (rate + 0.06))) < 0.06, true);
+  check('projection bonus 0.41/min', Math.abs(pj.bonus - 5 * 0.41) < 0.06, true);
+  // the alert engine with an isolated context
+  var saved = ctx, savedS = JSON.stringify(S);
+  ctx = {alerted: {}, log: [], prefix: '', persist: false};
+  S.push = {nba: 'all', ncaab: 'all'}; S.minLeft = {nba: 180, ncaab: 240}; S.headsUp = false; S.doubleBonus = true;
+  function fake(league, id, period, clock, fouls){
+    var comp = {id: id, competitors: [{homeAway: 'home', score: '50', team: {id: '1', abbreviation: 'HOM'}}, {homeAway: 'away', score: '48', team: {id: '2', abbreviation: 'AWY'}}],
+      status: {clock: clock, displayClock: fmtClock(clock), period: period, type: {name: 'STATUS_IN_PROGRESS', state: 'in', shortDetail: 'live'}}};
+    var ps = fouls.map(function(f){ return fp(f[0], f[1], f[2], league === 'ncaab' ? 'PersonalFoul' : 'Personal Foul'); });
+    ps.push({type: {text: 'Jump Shot'}, team: {id: '1'}, period: {number: period}, clock: {displayValue: fmtClock(clock)}, awayScore: 48, homeScore: 50});
+    var x = newGame(id, league);
+    applyEvent(x, parseScoreboard(league, {events: [{id: id, shortName: 'AWY @ HOM', competitions: [comp]}]})[0]);
+    applySummary(x, {header: {id: id, competitions: [comp]}, format: {regulation: {periods: league === 'ncaab' ? 2 : 4}}, plays: ps});
+    return x;
+  }
+  function both(n, period, clock){ var out = []; ['1', '2'].forEach(function(t){ for (var k = 0; k < n; k++) out.push([t, period, clock]); }); return out; }
+  var g1 = fake('nba', 'g1', 2, 300, both(4, 2, '9:00'));
+  check('NBA both at 4 with 5:00 left alerts', evaluate(g1).map(function(e){ return e.title; }), ['2 FTs both ways: AWY @ HOM']);
+  check('...and not again', evaluate(g1).length, 0);
+  var g2 = fake('nba', 'g2', 4, 100, both(5, 4, '5:00'));
+  evaluate(g2);
+  check('NBA with 1:40 left: too late', ctx.log[ctx.log.length - 1].outcome, 'late');
+  var c1 = fake('ncaab', 'c1', 2, 600, both(6, 2, '15:00'));
+  check('NCAAB both at 6: 1-and-1 alert', evaluate(c1).map(function(e){ return e.title; }), ['1-and-1 both ways: AWY @ HOM']);
+  c1 = fake('ncaab', 'c1', 2, 420, both(9, 2, '15:00'));
+  check('NCAAB both at 9: 2-shot alert', evaluate(c1).map(function(e){ return e.title; }), ['2 shots both ways: AWY @ HOM']);
+  S.push.ncaab = 'starred';
+  var c2 = fake('ncaab', 'c2', 1, 700, both(7, 1, '15:00'));
+  evaluate(c2);
+  check('NCAAB starred-only mutes an unstarred game', ctx.log[ctx.log.length - 1].outcome, 'muted');
+  var c3 = fake('ncaab', 'c3', 2, 900, [['1', 2, '15:00'], ['1', 2, '15:00'], ['1', 2, '15:00'], ['1', 2, '15:00'], ['1', 2, '15:00'], ['1', 2, '15:00'], ['1', 2, '15:00'], ['2', 2, '15:00']]);
+  check('only one team in the bonus: no alert', evaluate(c3).length, 0);
+  ctx = saved; store.settings = S = JSON.parse(savedS);
+  lines.push('', fails ? fails + ' test(s) FAILED.' : 'All tests passed.');
+  return {fails: fails, text: lines.join('\n')};
+}
+
+// For testing: lets a test page compare these results with the Python version.
+window.FW = {selftest: selftest, analyze: function(league, data){
+  var g = newGame(String(((data.header || {}).id) || 'x'), league);
+  applySummary(g, data);
+  return {period: g.period, clock: g.clock, rules: g.rules, fouls: g.teams.map(function(t){ return t.fouls; }),
+          tiers: g.teams.map(function(t){ return t.tier; }), badges: g.teams.map(function(t){ return t.badge; }),
+          periodPts: g.periodPts, proj: projection(g), lineupKnown: g.lineupKnown,
+          drawers: g.teams.map(function(t){ return (g.drawers[t.id] || []).map(function(d){ return [d.name, d.fta, d.qpts, d.pf]; }); })};
+}};
+
+if (QS.get('selftest')) {
+  var res = selftest(), box = $('selftest');
+  box.hidden = false; box.textContent = res.text;
+}
+if (QS.get('replay')) startReplay(QS.get('replay').replace(/\D/g, ''), +(QS.get('from') || 1), +(QS.get('speed') || 10));
+if (S.wake) wake(true);
+render();
+setInterval(tick, 1000);
+tick();
+})();
+</script>
+</body>
+</html>
